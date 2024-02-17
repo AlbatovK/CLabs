@@ -333,6 +333,8 @@ int ind_task_additional() {
             printf("%d ", f_arr[i]);
         }
 
+        free(f_arr);
+
         fclose(output_file);
     }
 
