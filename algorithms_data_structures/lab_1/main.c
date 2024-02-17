@@ -112,7 +112,7 @@ int input(Matrix *matrix) {
     return 1;
 }
 
-void ind_task() {
+int ind_task() {
     int m;
     const char *pr = "";
 
@@ -210,7 +210,137 @@ void ind_task() {
     free(arr);
 }
 
+int create_test_file_if_not_exist() {
+    FILE *file_ptr;
+    file_ptr = fopen("test.bin", "wb");
+
+    if (file_ptr == NULL) {
+        printf("Unable to open file %s.\n", "test");
+        return 0;
+    }
+
+    int linesCount = 1;
+    fwrite(&linesCount, sizeof(int), 1, file_ptr);
+    int size = 5;
+    fwrite(&size, sizeof(int), 1, file_ptr);
+
+    for (int i = 0; i < 5; i++) {
+        int elem = i * 10 + 52;
+        fwrite(&elem, sizeof(int), 1, file_ptr);
+    }
+
+    fclose(file_ptr);
+}
+
+int ind_task_additional() {
+    FILE *file_ptr;
+    char filename[100];
+
+    printf("Enter input file name with vector (1 x N matrix):\n");
+    scanf("%s", filename);
+
+    file_ptr = fopen(filename, "rb");
+
+    if (file_ptr == NULL) {
+        printf("Unable to open file %s.\n", filename);
+        return 0;
+    }
+
+    int lines_count;
+    fread(&lines_count, sizeof(int), 1, file_ptr);
+    printf("Vector lines - %d (Must be 1).\n", lines_count);
+
+    int mx = INT_MIN;
+    for (int i = 0; i < lines_count; i++) {
+        int size;
+        fread(&size, sizeof(int), 1, file_ptr);
+        printf("Vector size - %d\n", size);
+
+        for (int j = 0; j < size; j++) {
+            int element;
+            fread(&element, sizeof(int), 1, file_ptr);
+            printf("%d ", element);
+            if (element > mx) {
+                mx = element;
+            }
+        }
+
+        printf("\nEnter output file name for matrix:\n");
+        scanf("%s", filename);
+
+        FILE *output_file = fopen(filename, "wb");
+        if (output_file == NULL) {
+            printf("Unable to open file %s.\n", filename);
+            fclose(file_ptr);
+            return 0;
+        }
+
+        fwrite(&size, sizeof(int), 1, output_file);
+        printf("Output matrix lines_count - %d.\n", size);
+        fseek(file_ptr, sizeof(int) * 2, SEEK_SET);
+
+        int f_c = 2;
+        int a = 1, b = 1;
+        while (b < mx) {
+            int tmp = b;
+            b = a + b;
+            a = tmp;
+            f_c += 1;
+        }
+
+        int *f_arr = (int *)malloc(f_c * sizeof(int));
+        f_arr[0] = f_arr[1] = 1;
+        for (int i = 2; i < f_c; i++) {
+            f_arr[i] = f_arr[i - 1] + f_arr[i - 2];
+        }
+
+        for (int i = 0; i < size; i++) {
+            int elem;
+            fread(&elem, sizeof(int), 1, file_ptr);
+            int sm = elem;
+            int j = f_c - 1;
+            int k = 0;
+
+            while (sm > 0) {
+                if (sm < f_arr[j]) {
+                    j--;
+                } else {
+                    sm -= f_arr[j];
+                    k += 1;
+                }
+            }
+
+            fwrite(&k, sizeof(int), 1, output_file);
+            printf("Size of %d row - %d.\n", i + 1, k);
+
+            sm = elem;
+            j = f_c - 1;
+
+            while (sm > 0) {
+                if (sm < f_arr[j]) {
+                    j--;
+                } else {
+                    sm -= f_arr[j];
+                    fwrite(f_arr + j, sizeof(int), 1, output_file);
+                    printf("%d ", f_arr[j]);
+                }
+            }
+            printf("\n");
+        }
+
+        printf("\nLong enough fibbonachi sequence:\n");
+        for (int i = 0; i < f_c; i++) {
+            printf("%d ", f_arr[i]);
+        }
+
+        fclose(output_file);
+    }
+
+    fclose(file_ptr);
+}
+
 int main() {
+    
     // Matrix *matrix = malloc(sizeof(Matrix));
 
     // input(matrix);
@@ -219,6 +349,7 @@ int main() {
 
     // free(matrix);
 
-    ind_task();
+    create_test_file_if_not_exist();
+    ind_task_additional();
     return 0;
 }
