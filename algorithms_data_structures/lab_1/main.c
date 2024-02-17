@@ -221,11 +221,14 @@ int create_test_file_if_not_exist() {
 
     int linesCount = 1;
     fwrite(&linesCount, sizeof(int), 1, file_ptr);
-    int size = 5;
+    int size;
+    printf("Enter size.\n");
+    scanf("%d", &size);
     fwrite(&size, sizeof(int), 1, file_ptr);
 
-    for (int i = 0; i < 5; i++) {
-        int elem = i * 10 + 52;
+    for (int i = 0; i < size; i++) {
+        int elem;
+        scanf("%d", &elem);
         fwrite(&elem, sizeof(int), 1, file_ptr);
     }
 
