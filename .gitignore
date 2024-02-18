@@ -1,3 +1,8 @@
 .vscode/
 /.vscode/*
 /.vscode
+*.exe
+*.
+*.bin
+/**/*.exe
+/**/*.bin
