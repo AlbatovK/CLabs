@@ -210,17 +210,17 @@ int ind_task_additional() {
         return 0;
     }
 
-    Line line = {0, NULL};
-    fread(&line.size, sizeof(int), 1, file_ptr);
-    printf("Vector lines - %d (Must be 1).\n", line.size);
+    int lines_count;
+    fread(&lines_count, sizeof(int), 1, file_ptr);
+    printf("Vector lines - %d (Must be 1).\n", lines_count);
 
     int mx = INT_MIN;
-    for (int i = 0; i < line.size; i++) {
-        int size;
-        fread(&size, sizeof(int), 1, file_ptr);
-        printf("Vector size - %d\n", size);
+    for (int i = 0; i < lines_count; i++) {
+        Line line = {0, NULL};
+        fread(&line.size, sizeof(int), 1, file_ptr);
+        printf("Vector size - %d\n", line.size);
 
-        for (int j = 0; j < size; j++) {
+        for (int j = 0; j < line.size; j++) {
             int element;
             fread(&element, sizeof(int), 1, file_ptr);
             printf("%d ", element);
@@ -239,8 +239,8 @@ int ind_task_additional() {
             return 0;
         }
 
-        fwrite(&size, sizeof(int), 1, output_file);
-        printf("Output matrix lines_count - %d.\n", size);
+        fwrite(&line.size, sizeof(int), 1, output_file);
+        printf("Output matrix lines_count - %d.\n", line.size);
         fseek(file_ptr, sizeof(int) * 2, SEEK_SET);
 
         int f_c = 2;
@@ -258,7 +258,7 @@ int ind_task_additional() {
             f_arr[i] = f_arr[i - 1] + f_arr[i - 2];
         }
 
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < line.size; i++) {
             int elem;
             fread(&elem, sizeof(int), 1, file_ptr);
             int sm = elem;
