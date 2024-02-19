@@ -99,35 +99,35 @@ int input(Matrix *matrix) {
 }
 
 int ind_task() {
-    int m;
     const char *pr = "";
+    Line line = {0, NULL};
 
     printf("Enter vector size.\n");
     do {
         printf("%s", pr);
         pr = "Size must be more than 0.\n";
-        getInt(&m);
-    } while (m < 1);
+        getInt(&line.size);
+    } while (line.size < 1);
 
-    int *arr = (int *)malloc(m * sizeof(int));
+    line.arr = (int *)malloc(line.size * sizeof(int));
 
     Matrix *matrix = (Matrix *)malloc(sizeof(Matrix));
-    matrix->linesCount = m;
-    matrix->lines = (Line *)malloc(m * sizeof(Line));
+    matrix->linesCount = line.size;
+    matrix->lines = (Line *)malloc(line.size * sizeof(Line));
 
     printf("Enter elements:\n");
 
     int mx = INT_MIN;
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < matrix->linesCount; i++) {
         pr = "";
         do {
             printf("%s", pr);
             pr = "Values must be greater or equal to zero.\n";
-            getInt(arr + i);
-            if (arr[i] > mx) {
-                mx = arr[i];
+            getInt(line.arr + i);
+            if (line.arr[i] > mx) {
+                mx = line.arr[i];
             }
-        } while (arr[i] < 0);
+        } while (line.arr[i] < 0);
     }
 
     int f_c = 2;
@@ -145,8 +145,8 @@ int ind_task() {
         f_arr[i] = f_arr[i - 1] + f_arr[i - 2];
     }
 
-    for (int i = 0; i < m; i++) {
-        int sm = arr[i];
+    for (int i = 0; i < matrix->linesCount; i++) {
+        int sm = line.arr[i];
         int j = f_c - 1;
         int k = 0;
 
@@ -162,8 +162,8 @@ int ind_task() {
         matrix->lines[i].arr = (int *)malloc(k * sizeof(int));
     }
 
-    for (int i = 0; i < m; i++) {
-        int sm = arr[i];
+    for (int i = 0; i < matrix->linesCount; i++) {
+        int sm = line.arr[i];
         int j = f_c - 1;
         int k = 0;
         while (sm > 0) {
@@ -183,8 +183,8 @@ int ind_task() {
     }
 
     printf("\n\nInput vector:\n");
-    for (int i = 0; i < m; i++) {
-        printf("%d ", arr[i]);
+    for (int i = 0; i < matrix->linesCount; i++) {
+        printf("%d ", line.arr[i]);
     }
 
     printf("\n\nOutput matrix:\n");
@@ -193,7 +193,7 @@ int ind_task() {
     erase(matrix);
     free(matrix);
     free(f_arr);
-    free(arr);
+    free(line.arr);
 }
 
 int ind_task_additional() {
@@ -210,12 +210,12 @@ int ind_task_additional() {
         return 0;
     }
 
-    int lines_count;
-    fread(&lines_count, sizeof(int), 1, file_ptr);
-    printf("Vector lines - %d (Must be 1).\n", lines_count);
+    Line line = {0, NULL};
+    fread(&line.size, sizeof(int), 1, file_ptr);
+    printf("Vector lines - %d (Must be 1).\n", line.size);
 
     int mx = INT_MIN;
-    for (int i = 0; i < lines_count; i++) {
+    for (int i = 0; i < line.size; i++) {
         int size;
         fread(&size, sizeof(int), 1, file_ptr);
         printf("Vector size - %d\n", size);
