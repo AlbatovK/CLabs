@@ -8,11 +8,14 @@ typedef struct queue {
 } queue;
 
 int do_queue(queue * q) {
-    q->a = 13;
     printf("a - %d", q->a);
     return 0;
 }
 
 queue * create_new_queue() {
     return (queue *) malloc(sizeof(queue) * 1);
+}
+
+void erase_queue(queue * q) {
+    free(q);
 }
