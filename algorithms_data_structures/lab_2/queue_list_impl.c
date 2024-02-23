@@ -8,6 +8,7 @@ typedef struct queue {
 } queue;
 
 int do_queue(queue * q) {
+    q->b = 0;
     printf("b - %d", q->b);
     return 0;
 }
