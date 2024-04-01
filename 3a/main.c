@@ -40,7 +40,7 @@ int main() {
 					break;
 				}
 
-				printf("Successfully put key: %s, value: %s.\n", keyToPut, value);
+				printf("Successfully put key with value: %s.\n", value);
 				break;
 				
 			case 2:

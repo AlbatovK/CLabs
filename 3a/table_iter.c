@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+#include "iter.h"
+
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -63,35 +65,40 @@ int putKey(Table * table, KeyType key, InfoType info) {
 		return 0;		
 	}
 
-	table -> keySpace -> entries[table -> ksSize].key = key;
-
 	Node * new = (Node *) malloc(sizeof(Node) * 1);
 	new -> info = (InfoType *) malloc(sizeof(InfoType) * 1);
 	* new -> info = info;
 
-	for (unsigned int i = 0; i < table -> ksSize; i++) {
-		KeyEntry entry = table -> keySpace -> entries[i];
-		if (strcmp(entry.key, key) == 0) {
-			if (table -> keySpace -> entries[i].first == NULL) {
+	Iter * iter = begin(table);
+
+	while (hasNext(iter)) {
+		if (strcmp(iter -> current -> key, key) == 0) {
+			if (iter -> current -> first == NULL) {
 				new -> release = 0;
 				new -> next = NULL;
-				table -> keySpace -> entries[i].first = new;
+				iter -> current -> first = new;
 			} else {
-				RelType nextRelease = table -> keySpace -> entries[i].first -> release + 1;
+				RelType nextRelease = iter -> current -> first -> release + 1;
 				new -> release = nextRelease;
-				new -> next = table -> keySpace -> entries[i].first;
-				table -> keySpace -> entries[i].first = new;
+				new -> next = iter -> current -> first;
+				iter -> current -> first = new;
 			}
+			
 			free(key);
+			free(iter);
 			return 1;
 		}
+		next(iter);
 	}
+
+	iter -> current -> key = key;
 	
 	new -> release = 0;
 	new -> next = NULL;
-	table -> keySpace -> entries[table -> ksSize].first = new;
+	iter -> current -> first = new;
 	table -> ksSize++;
 
+	free(iter);
 	return 1;
 }
 
@@ -107,27 +114,31 @@ int putKeyWithRelease(Table * table, KeyType key, InfoType info, RelType release
 	new -> info = (InfoType *) malloc(sizeof(InfoType) * 1);
 	* new -> info = info;
 
-	for (unsigned int i = 0; i < table -> ksSize; i++) {
-		KeyEntry entry = table -> keySpace -> entries[i];
-		if (strcmp(entry.key, key) == 0) {
-			if (table -> keySpace -> entries[i].first == NULL) {
+	Iter * iter = begin(table);
+
+	while (hasNext(iter)) {
+		if (strcmp(iter -> current -> key, key) == 0) {
+			if (iter -> current -> first == NULL) {
 				new -> release = release;
 				new -> next = NULL;
-				table -> keySpace -> entries[i].first = new;
+				iter -> current -> first = new;
 			} else {
 				new -> release = release;
-				new -> next = table -> keySpace -> entries[i].first;
-				table -> keySpace -> entries[i].first = new;
+				new -> next = iter -> current -> first;
+				iter -> current -> first = new;
 			}
+			free(iter);
 			return 1;
 		}
+		next(iter);
 	}
 	
 	new -> release = release;
 	new -> next = NULL;
-	table -> keySpace -> entries[table -> ksSize].first = new;
+	iter -> current -> first = new;
 	table -> ksSize++;
 
+	free(iter);
 	return 1;
 }
 
@@ -137,11 +148,12 @@ Table * findByKey(Table * table, KeyType key) {
 		return NULL;
 	}
 
-	for (unsigned int i = 0; i < table -> ksSize; i++) {
-		KeyEntry entry = table -> keySpace -> entries[i];
-		if (strcmp(key, entry.key) == 0) {
+	Iter * iter = begin(table);
+
+	while (hasNext(iter)) {
+		if (strcmp(key, iter -> current -> key) == 0) {
 			Table * resultTable = createTable(TABLE_SIZE);
-			Node * curNode = entry.first;
+			Node * curNode = iter -> current -> first;
 
 			if (curNode == NULL) {
 				return resultTable;
@@ -155,10 +167,12 @@ Table * findByKey(Table * table, KeyType key) {
 				curNode = curNode -> next;	
 			}
 
+			free(iter);
 			return resultTable;
 		}
 	}
 	
+	free(iter);
 	return NULL;
 }
 
@@ -168,19 +182,23 @@ InfoType * findByKeyAndRelease(Table * table, KeyType key, RelType release) {
 		return NULL;
 	}
 
-	for (unsigned int i = 0; i < table -> ksSize; i++) {
-		KeyEntry entry = table -> keySpace -> entries[i];
-		if (strcmp(key, entry.key) == 0) {
-			Node * curNode = entry.first;
+	Iter * iter = begin(table);
+
+	while (hasNext(iter)) {
+		if (strcmp(key, iter -> current -> key) == 0) {
+			Node * curNode = iter -> current -> first;
 			while (curNode != NULL) {
 				if (curNode -> release == release) {
+					free(iter);
 					return curNode -> info;
 				}
 				curNode = curNode -> next;
 			}
 		}
+		next(iter);
 	}
-	
+
+	free(iter);
 	return NULL;
 }
 
@@ -190,13 +208,14 @@ int deleteByKey(Table * table, KeyType key) {
 		return 0;
 	}
 
-	for (unsigned int i = 0; i < table -> ksSize; i++) {
-		KeyEntry entry = table -> keySpace -> entries[i];
-		if (strcmp(key, entry.key) == 0) {
+	Iter * iter = begin(table);
 
-			free(entry.key);
-			entry.key = NULL;	
-			Node * curNode = entry.first;
+	while (hasNext(iter)) {
+		if (strcmp(key, iter -> current -> key) == 0) {
+
+			free(iter -> current -> key);
+			iter -> current -> key = NULL;	
+			Node * curNode = iter -> current -> first;
 			while (curNode != NULL) {
 				Node * tmp = curNode;
 				curNode = curNode -> next;
@@ -205,20 +224,25 @@ int deleteByKey(Table * table, KeyType key) {
 				free(tmp);
 			}
 			
-			entry.first = NULL;
+			iter -> current -> first = NULL;
 
-			if (i != table -> ksSize - 1) {
-				table -> keySpace -> entries[i].key = table -> keySpace -> entries[table -> ksSize - 1].key;
-				table -> keySpace -> entries[i].first = table -> keySpace -> entries[table -> ksSize - 1].first;
-				table -> keySpace -> entries[table -> ksSize - 1].key = NULL;
-				table -> keySpace -> entries[table -> ksSize - 1].first = NULL;
+			Iter * last = end(table);
+
+			if (!compare(iter, last)) {
+				iter -> current -> key = last -> current -> key;
+				iter -> current -> first = last -> current -> first;
+				last -> current -> key = NULL;
+				last -> current -> first = NULL;
 			}
 
+			free(iter);
+			free(last);
 			table -> ksSize--;
 			return 1;
 		}
 	}
 
+	free(iter);
 	return 0;
 }
 
@@ -296,7 +320,7 @@ Table * importFromFile(char * filename) {
 	char * s;
 	while (strlen((s = file_readline(filePtr)))) {
 
-		char * key = strtok(s, ";");;
+		char * key = strtok(s, ";");
 		
 		char * value;
 		while ((value = strtok(NULL, ";")) != NULL) {
