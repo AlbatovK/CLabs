@@ -26,6 +26,75 @@ typedef struct TreeNode {
 	
 } TreeNode;
 
+
+int maxDepth(TreeNode * node) {
+	if (node == NULL) {
+		return 0;
+	}
+
+	int rightDepth = maxDepth(node -> right);
+	int leftDepth = maxDepth(node -> left);
+	
+	return 1 + (rightDepth > leftDepth ? rightDepth : leftDepth); 
+}
+
+typedef struct TreeNodeMeta {
+	TreeNode * node;
+	int curLevel;
+} TreeNodeMeta;
+
+void dot_print_null(int key, int nullcount, FILE * out) {
+	fprintf(out, "	null%d [shape=point];\n", nullcount);
+	fprintf(out, "	%d -> null%d;\n", key, nullcount);
+}
+
+void dot_print_node(TreeNode * node, FILE * out, int nullcount) {
+	nullcount++;
+	if (node -> left != NULL) {
+		nullcount += 7;
+		fprintf(out, "	%d -> %d;\n", node -> key, node -> left -> key);
+		dot_print_node(node -> left, out, nullcount + 1);
+		nullcount++;
+	} else {
+		nullcount += 3;
+		dot_print_null(node -> key, nullcount + 1, out);
+		nullcount++;
+	}
+
+	if (node -> right != NULL) {
+		nullcount += 11;
+		fprintf(out, "	%d -> %d;\n", node -> key, node -> right -> key);
+		dot_print_node(node -> right, out, nullcount + 1);
+		nullcount++;
+	} else {
+		nullcount += 13;
+		dot_print_null(node -> key, nullcount + 1, out);
+		nullcount++;
+	}	
+}
+
+void dot_print_tree(TreeNode * root, char * filename) {
+	FILE * out = fopen(filename, "w");
+	if (out == NULL) {
+		return;
+	}
+
+	fprintf(out, "digraph BST {\n");
+	fprintf(out, "	node [fontname=\"Mono\"];\n");
+
+	if (root == NULL) {
+		fprintf(out, "\n");
+	} else if (root -> left == NULL && root -> right == NULL) {
+		fprintf(out, "	%d;\n", root -> key);
+	} else {
+		dot_print_node(root, out, 0);
+	}
+
+	fprintf(out, "}\n");
+
+	fclose(out);
+}
+
 InfoField * createInfoField(int value) {
 	InfoField * info = (InfoField *) malloc(sizeof(InfoField) * 1);
 	info -> value = value;
@@ -188,8 +257,54 @@ TreeNode * search(TreeNode * node, int key) {
 	return search(key < node -> key ? node -> left : node -> right, key);
 }
 
+void std_print_tree(TreeNode * root, int offset) {
+
+	for (int i = 0; i < offset; i++) {
+		printf(" ");
+	}
+
+	if (root == NULL) {
+		printf("-\n");
+	} else {
+		printf("%d\n", root -> key);
+		std_print_tree(root -> left, offset + 2);
+		std_print_tree(root -> right, offset + 2);
+	}
+}
+
+
+
 
 int main(void) {
+
+	TreeNode * node = NULL;
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree1.dot");
+	insert(&node, -1, 20, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree2.dot");
+	insert(&node, 3, 20, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree3.dot");
+	insert(&node, -2, 5, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree4.dot");
+	insert(&node, 65, 5, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree5.dot");
+	insert(&node, 4, 5, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree6.dot");
+	insert(&node, -23, 5, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree7.dot");
+	insert(&node, 23, 5, NULL);
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree8.dot");
+	delete(&node, -1);
+
+	std_print_tree(node, 0);
+	dot_print_tree(node, "tree9.dot");
 
 	return 0;
 }
