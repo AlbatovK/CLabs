@@ -91,6 +91,10 @@ TreeNode * createNode(TreeNode * left, TreeNode * right, TreeNode * prev, int ke
 
 void freeNode(TreeNode * node) {
 
+	if (node == NULL) {
+		return;
+	}
+
 	InfoField * cur = node -> infoNode;
 	while (cur) {
 		InfoField * tmp = cur -> next;
@@ -142,124 +146,32 @@ void insert(TreeNode * * node, int key, int value, TreeNode * prev) {
 	}
 }
 
-
 TreeNode * delete(TreeNode * * node, int key) {
 	if (* node == NULL) {
 		return NULL;
 	}
-
-	if (key == (* node) -> key) {
-		if ( (* node) -> right != NULL && (* node) -> left != NULL) {
-			TreeNode * minInRight = minInSubTree( ( * node) -> right);
-			(* node) -> key = minInRight -> key;
-
-			if (minInRight -> infoNode == NULL) {
-
-				InfoField * cur = (* node) -> infoNode;
-				while (cur) {
-					InfoField * tmp = cur;
-					cur = cur -> next;
-					free(tmp);
-				}
-				
-				(* node) -> infoNode = NULL;
-				
-			} else {
-				InfoField * start = createInfoField(minInRight -> infoNode -> value);
-				
-				InfoField * copy = start;
-				InfoField * cur = minInRight -> infoNode -> next;
-				
-				while (cur) {
-					copy -> next = createInfoField(cur -> value);
-					cur = cur -> next;
-				}
-
-				cur = (* node) -> infoNode;
-				while (cur) {
-					InfoField * tmp = cur;
-					cur = cur -> next;
-					free(tmp);
-				}
-
-				(* node) -> infoNode = start;
-				
-			}
-
-			(* node) -> right = delete( &(* node) -> right, (* node) -> key);
-			
-		} else {
-			TreeNode * tmp = (* node);
-			if ( (* node) -> right == NULL) {
-				(* node) = (* node) -> left;
-			} else {
-				(* node) = (* node) -> right;
-			}
-			freeNode(tmp);
-		}
-
-	} else if (key < (* node) -> key) {
-		TreeNode * left = (* node) -> left;
-		(* node) -> key = left -> key;
-
-		InfoField * cur = (* node) -> infoNode;
-		while (cur) {
-			InfoField * tmp = cur;
-			cur = cur -> next;
-			free(tmp);
-		}
 	
-		if (left -> infoNode == NULL) {
-			(* node) -> infoNode = NULL;
-		} else {
-			InfoField * start = createInfoField(left -> infoNode -> value);
-			InfoField * copy = start;
-			InfoField * cur = left -> infoNode -> next;
-			while (cur) {
-				copy -> next = createInfoField(cur -> value);
-				cur = cur -> next;
-			}
-
-			(* node) -> infoNode = start;
-			
-		}
-
-		(* node) -> left = delete( &(* node) -> left, (* node) -> key);
-		
+	if (key < (* node) -> key) {
+		TreeNode * deleted = delete(&((* node) -> left), key);
+		(* node) -> left = deleted;
 	} else if (key > (* node) -> key) {
-		TreeNode * right = (* node) -> right;
-		(* node) -> key = right -> key;
-
-		InfoField * cur = (* node) -> infoNode;
-		while (cur) {
-			InfoField * tmp = cur;
-			cur = cur -> next;
-			free(tmp);
-		}
-	
-		if (right -> infoNode == NULL) {
-			(* node) -> infoNode = NULL;
+		TreeNode * deleted = delete(&((* node) -> right), key);
+		(* node) -> right = deleted;
+	} else if ((* node) -> left != NULL && (* node) -> right != NULL) {
+		(* node) -> key = minInSubTree((* node) -> right) -> key;	
+		(* node) -> right = delete(&((* node) -> right), (* node) -> key);
+	} else {
+		if ((*node) -> left != NULL) {
+			* node = (* node) -> left;
+		} else if ((* node) -> right != NULL) {
+			* node = (* node) -> right;
 		} else {
-			InfoField * start = createInfoField(right -> infoNode -> value);
-			InfoField * copy = start;
-			InfoField * cur = right -> infoNode -> next;
-			while (cur) {
-				copy -> next = createInfoField(cur -> value);
-				cur = cur -> next;
-			}
-
-			(* node) -> infoNode = start;
-			
+			* node = NULL;
 		}
-
-		(* node) -> right = delete( &(* node) -> right, (* node) -> key);
-		
 	}
-
-	return * node;
 	
+	return * node;
 }
-
 
 TreeNode * importFromFile(char * filename) {
 	FILE * filePtr = fopen(filename, "r");
@@ -492,7 +404,6 @@ TreeNode * processFile(char * filename, char * output) {
 	free(s);
 
 	exportToFile(root, outputFile);
-	
 	
 	fclose(outputFile);
 	

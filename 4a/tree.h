@@ -25,6 +25,8 @@ typedef struct TreeNode {
 
 void insert(TreeNode * * node, int key, int value, TreeNode * prev);
 
+void printBinaryTree(TreeNode * node);
+
 TreeNode * delete(TreeNode * * node, int key);
 
 TreeNode * importFromFile(char * filename);
