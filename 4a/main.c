@@ -2,18 +2,93 @@
 
 #include <stdlib.h>
 
+#include <time.h>
+
 #include "utils.h"
 
 #include "tree.h"
 
+void profile() {
+	FILE * file = fopen("profiling.txt", "w");
+	TreeNode * tree = NULL;
+	srand(time(NULL));
+
+	int testCount = 20;
+
+	int ns[] = {10, 50, 100, 150, 200, 300, 500, 700, 1000, 2000, 3000,  5000, 10000};
+	for (unsigned int j = 0; j < sizeof(ns) / sizeof(int); j++) {
+		int n = ns[j];
+		int sm1 = 0;
+		for (int k = 0; k < testCount; k++) {
+			int start = clock();
+			for (int i = 0; i < n; i++) {
+				insert(&tree, rand() % 100, 0, NULL);
+			}
+			int end = clock();
+			sm1 += end - start;
+			freeTree(tree);
+			tree = NULL;
+		}
+		sm1 /= testCount;
+		printf("%d - %d\n", n, sm1);
+
+		int sm2 = 0;
+		for (int k = 0; k < testCount; k++) {
+			int start = clock();
+			for (int i = 0; i < n; i++) {
+				search(tree, rand() % 1000);
+			}
+			int end = clock();
+			sm2 += end - start;
+			freeTree(tree);
+			tree = NULL;
+		}
+		sm2 /= testCount;
+		printf("%d - %d\n", n, sm2);
+
+		int sm3 = 0;
+		for (int k = 0; k < testCount; k++) {
+			int start = clock();
+			for (int i = 0; i < n; i++) {
+				tree = delete(&tree, rand() % 1000);
+			}
+			int end = clock();
+			sm3 += end - start;
+			freeTree(tree);
+			tree = NULL;
+		}
+		sm3 /= testCount;
+		printf("%d - %d\n", n, sm3);
+
+		fprintf(file, "%d;%d;%d;%d\n", n, sm1, sm2, sm3);
+	
+	}
+
+	fclose(file);
+	
+}
+
+void makeTestBin() {
+	FILE * file = fopen("test.bin", "wb");
+	int n = 10;
+	fwrite(&n, sizeof(int), 1, file);
+	for (int i = 0; i < n; i++) {
+		int num = rand() % 100;
+		fwrite(&num, sizeof(int), 1, file);
+	}
+	fclose(file);
+}
+
 int main(void) {
+	makeTestBin();
 	TreeNode * tree = NULL;
 	int action = 0;
 
-	while (action != 10) {
+	while (action != 11) {
 		printf("Enter action. 1 - insert element, 2 - delete element, 3 - search by digits count.\n");
 		printf("4 - search by key and position, 5 - import from text file, 6 - additional task.\n");
-		printf("7 - output like a \"tree\", 8 - standard horizontal output, 9 - output to dot, 10 - exit.\n");
+		printf("7 - output like a tree, 8 - standard horizontal output, 9 - output to dot.\n");
+		printf("10 - find nearest by key, 11 - exit, 12 - profile.\n");
 
 
 		char * pr = "";
@@ -21,7 +96,7 @@ int main(void) {
 			printf("%s", pr);
 			getInt(&action);
 			pr = "No such action. Try again.\n";
-		} while (action < 1 || action > 10);
+		} while (action < 1 || action > 12);
 
 		switch(action) {
 
@@ -111,8 +186,26 @@ int main(void) {
 				break;
 			
 			case 10:
+				int keyNearest;
+				printf("Enter key to find nearest.\n");
+				getInt(&keyNearest);
+				TreeNode * node = findNearestByKey(tree, keyNearest);
+				if (node == NULL) {
+					printf("Tree is empty or invalid. No elements found.\n");
+					break;
+				}
+				printf("Found element with key: %d\n", node -> key);
+				break;
+
+			case 11:
 				printf("Exiting.\n");
 				break;	
+
+			case 12:
+				printf("Profiling...\n");
+				profile();
+				printf("Done!\n");
+				break;
 		}
 	}
 

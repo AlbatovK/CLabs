@@ -108,6 +108,10 @@ void freeNode(TreeNode * node) {
 
 TreeNode * minInSubTree(TreeNode * node) {
 
+	if (node == NULL) {
+		return NULL;
+	}
+
 	if (node -> left == NULL) {
 		return node;
 	}
@@ -157,18 +161,28 @@ TreeNode * delete(TreeNode * * node, int key) {
 	} else if (key > (* node) -> key) {
 		TreeNode * deleted = delete(&((* node) -> right), key);
 		(* node) -> right = deleted;
-	} else if ((* node) -> left != NULL && (* node) -> right != NULL) {
-		(* node) -> key = minInSubTree((* node) -> right) -> key;	
-		(* node) -> right = delete(&((* node) -> right), (* node) -> key);
 	} else {
-		if ((*node) -> left != NULL) {
-			* node = (* node) -> left;
-		} else if ((* node) -> right != NULL) {
-			* node = (* node) -> right;
-		} else {
-			* node = NULL;
+		
+		if ((* node) -> left == NULL && (* node) -> right == NULL) {
+			freeNode(*node);
+			return NULL;
 		}
-	}
+
+		if ((* node) -> left == NULL || (* node) -> right == NULL) {
+			TreeNode * tmp;
+			if ((* node) -> left == NULL) {
+				tmp = (* node) -> right;
+			} else {
+				tmp = (* node) -> left;
+			}
+			freeNode(*node);
+			return tmp;
+		}
+
+		TreeNode * t = minInSubTree((* node) -> right);
+		(* node) -> key = t -> key;	
+		(* node) -> right = delete(&((* node) -> right), t -> key);
+	} 
 	
 	return * node;
 }
@@ -367,13 +381,13 @@ void exportToFile(TreeNode * root, FILE * file) {
 	if (root == NULL) {
 		return;
 	}
-	fprintf(file, "%c: %d\n", root -> key, root -> infoNode -> value);
+	fprintf(file, "%d: %d\n", root -> key, root -> infoNode -> value);
 	exportToFile(root -> left, file);
 	exportToFile(root -> right, file);
 }
 
 TreeNode * processFile(char * filename, char * output) {
-	FILE * file = fopen(filename, "r");
+	FILE * file = fopen(filename, "rb");
 	if (file == NULL) {
 		return NULL;
 	}
@@ -385,23 +399,21 @@ TreeNode * processFile(char * filename, char * output) {
 
 	TreeNode * root = NULL;
 
-	char * s;
-	while (strlen((s = file_readline(file)))) {
-		for (unsigned i = 0; i < strlen(s); i++) {
-			char smb = tolower(s[i]);
-			if (smb == '.' || smb == ',' || smb == '!' || smb == ';' || smb == '?' || smb == ':')
-				continue;
-			InfoField * found = searchByKeyAndPos(root, smb, 0);
-			if (found == NULL) {
-				insert(&root, smb, 1, NULL);
-			} else {
-				insert(&root, smb, found -> value + 1, NULL);
-			}
-		}
-		free(s);
-	}
+	int n;
+	fread(&n, sizeof(int), 1, file);
 
-	free(s);
+	for (int i = 0; i < n; i++) {
+		int num;
+		fread(&num, sizeof(int), 1, file);
+
+		InfoField * found = searchByKeyAndPos(root, num, 0);
+		if (found == NULL) {
+			insert(&root, num, 1, NULL);
+		} else {
+			insert(&root, num, found -> value + 1, NULL);
+		}
+		
+	}
 
 	exportToFile(root, outputFile);
 	

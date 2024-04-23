@@ -47,4 +47,6 @@ void std_print_tree(TreeNode * root, int offset);
 
 InfoField * searchByKeyAndPos(TreeNode * node, int key, int pos);
 
+TreeNode * findNearestByKey(TreeNode * root, int key);
+
 #endif
