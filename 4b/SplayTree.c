@@ -279,10 +279,6 @@ void freeTree(SplayTreeNode * node) {
 }
 
 void dotPrintNode(SplayTreeNode * node, FILE * out) {
-	if (node -> parent != NULL) {
-		fprintf(out, "	%s -> %s;\n", node -> key, node -> parent -> key);
-	}
-		
 	if (node -> left != NULL) {
 		fprintf(out, "	%s -> %s;\n", node -> key, node -> left -> key);
 		dotPrintNode(node -> left, out);
