@@ -8,6 +8,69 @@
 
 #include "SplayTree.h"
 
+#include <time.h>
+
+char * getRandomString(int size) {
+	char charset[] = "abcdefghijklmnopqrstuvwxyz";
+	int charsetSize = sizeof(charset) / sizeof(char);
+
+	char * string = (char *) malloc(sizeof(char) * (size + 1) );
+	int i;
+	for (i = 0; i < size; i++) {
+		string[i] = charset[ rand() % (charsetSize - 1) ];
+	}
+	string[i] = '\0';
+	return string;
+}
+
+void profile() {
+	FILE * file = fopen("profiling.txt", "w");
+
+	if (file == NULL) 
+		return;
+	
+	srand(time(0));
+
+	unsigned int nSize = 30;
+	int * ns = (int *) malloc(sizeof(int) * nSize);
+	for (unsigned int i = 1; i < nSize + 1; i++) {
+		ns[i - 1] = i * 1000;
+	}
+	
+	for (unsigned int i = 0; i < nSize; i++) {
+		SplayTreeNode * tree = NULL;
+		int n = ns[i];
+		for (int j = 0; j < n; j++) {
+			insertNode(&tree, getRandomString(100), getRandomString(100));
+		}
+
+		int start = clock();
+		for (int k = 0; k < 100; k++)
+			insertNode(&tree, getRandomString(100), getRandomString(100));
+		int end = clock();
+		printf("%d\n", (end - start) / 10);
+		fprintf(file, "%d;%d;", n, (end - start) / 10);
+
+		start = clock();
+		for (int k = 0; k < 100; k++) {
+			char * toFind = getRandomString(100);
+			findByKey(&tree, toFind);
+			free(toFind);
+		}
+		
+		end = clock();
+
+		printf("%d\n", (end - start) / 10);
+		fprintf(file, "%d\n", (end - start) / 10);
+		
+		freeTree(tree);
+	}
+
+	free(ns);
+
+	fclose(file);
+}
+
 SplayTreeNode * ind_task(char * filename) {
 	FILE * filePtr = fopen(filename, "r");
 	if (filePtr == NULL) {
@@ -47,6 +110,7 @@ SplayTreeNode * ind_task(char * filename) {
 int main(void) {
 	SplayTreeNode * tree = NULL;
 	int action = 0;
+	profile();
 	int k = 0;
 
 	while (action != 9) {
