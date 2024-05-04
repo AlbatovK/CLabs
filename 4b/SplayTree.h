@@ -28,7 +28,7 @@ typedef struct SplaySplitResult {
 
 SplayTreeNode * find(SplayTreeNode * node, KeyType key);
 
-SplayTreeNode * insertNode(SplayTreeNode * * root, KeyType key);
+SplayTreeNode * insertNode(SplayTreeNode * * root, KeyType key, ValueType value);
 
 SplayTreeNode * removeNode(SplayTreeNode * * root, KeyType key);
 
@@ -39,5 +39,11 @@ void freeTree(SplayTreeNode * node);
 void dotPrintTree(SplayTreeNode * root, char * filename);
 
 SplayTreeNode * findMinNode(SplayTreeNode * root);
+
+InfoType * findByKey(SplayTreeNode * * root, KeyType key);
+
+SplayTreeNode * importTreeFromFile(char * filename);
+
+void postOrderTraversal(SplayTreeNode * node);
 
 #endif

@@ -1,12 +1,12 @@
 #include "SplayTree.h"
 
+#include "utils.h"
+
 #include <stdlib.h>
 
 #include <stdio.h>
 
 #include <string.h>
-
-#include "utils.h"
 
 SplayTreeNode * getParentNode(SplayTreeNode * node) {
 	if (node == NULL) 
@@ -104,6 +104,20 @@ SplayTreeNode * find(SplayTreeNode * node, KeyType key) {
 	return splay(node);
 }
 
+InfoType * findByKey(SplayTreeNode * * root, KeyType key) {
+	if ( (* root) == NULL) {
+		return NULL;
+	}
+
+	(* root) = find(* root, key);
+	if ( strcmp( (* root) -> key, key) == 0) {
+		return (* root) -> infoNode;
+	}
+
+	return NULL;
+	
+}
+
 SplaySplitResult * createSplaySplitResult(SplayTreeNode * left, SplayTreeNode * right, int found) {
 	SplaySplitResult * result = (SplaySplitResult * ) malloc(sizeof(SplaySplitResult) * 1);
 	result -> left = left;
@@ -155,11 +169,15 @@ SplayTreeNode * createNewNode(KeyType key, SplayTreeNode * left, SplayTreeNode *
 	return node;
 }
 
-SplayTreeNode * insertNode(SplayTreeNode * * root, KeyType key) {
+SplayTreeNode * insertNode(SplayTreeNode * * root, KeyType key, ValueType value) {
 	SplaySplitResult * res = split(root, key);
 	if (res -> found == 0) {
 		* root = createNewNode(key, res -> left, res -> right);
+		(* root) -> infoNode = createInfoNode(value);
 	} else {
+		InfoType * info = createInfoNode(value);
+		info -> next = (* root) -> infoNode;
+		(* root) -> infoNode = info;
 		free(key);
 	}
 	
@@ -185,11 +203,25 @@ void freeNode(SplayTreeNode * node) {
 		return;
 
 	free(node -> key);
-	
+
+	InfoType * cur = node -> infoNode;
+	while (cur) {
+		InfoType * tmp = cur -> next;
+		free(cur -> value);
+		free(cur);
+		cur = tmp;
+	}
+
+	node -> infoNode = NULL;
 	free(node);
 }
 
 SplayTreeNode * removeNode(SplayTreeNode * * root, KeyType key) {
+
+	if ( (* root) == NULL) {
+		return NULL;
+	}
+
 	SplayTreeNode * found = find(* root, key);
 	if (strcmp(found -> key, key) != 0) {
 		return * root;
@@ -285,7 +317,49 @@ void dotPrintTree(SplayTreeNode * root, char * filename) {
 }
 
 SplayTreeNode * findMinNode(SplayTreeNode * root) {
+	if (root == NULL) {
+		return NULL;
+	}
+	
 	if (root -> left == NULL)
 		return root;
 	return findMinNode(root -> left);
+}
+
+SplayTreeNode * importTreeFromFile(char * filename) {
+	FILE * filePtr = fopen(filename, "r");
+	if (filePtr == NULL)
+		return NULL;
+
+	SplayTreeNode * root = NULL;
+
+	char * key;
+	while (strlen((key = file_readline(filePtr)))) {
+		char * value = file_readline(filePtr);
+
+		insertNode(&root, m_strdup(key), m_strdup(value));
+
+		free(key);
+		free(value);
+	}
+
+	free(key);
+
+	fclose(filePtr);
+
+	return root;
+}
+
+
+void postOrderTraversalRecursive(SplayTreeNode * node) {
+	if (node == NULL)
+		return;
+	postOrderTraversalRecursive(node -> left);
+	postOrderTraversalRecursive(node -> right);
+	printf("%s ", node -> key);
+}
+
+void postOrderTraversal(SplayTreeNode * node) {
+	postOrderTraversalRecursive(node);
+	printf("\n");
 }
