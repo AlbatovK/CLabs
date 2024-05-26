@@ -31,6 +31,7 @@ int popQueue(Queue * q) {
 
 	int data = del -> data;
 	q -> size--;
+	free(del);
 	return data;
 }
 
@@ -65,5 +66,7 @@ void eraseQueue(Queue * q) {
 		cur = cur -> next;
 		free(tmp);
 	}
+
+	free(q);
 }
 

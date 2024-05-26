@@ -8,7 +8,7 @@
 
 #include "queue.h"
 
-#define INT_MAX 100000000
+#define INT_MAX 1000 * 1000 * 10
 
 typedef struct Edge {
 	char * src;
@@ -38,9 +38,36 @@ typedef struct AdjacencyList {
 	int eCount;
 } AdjacencyList;
 
+
+void freeGraph(AdjacencyList * list) {
+
+	if (list == NULL)
+		return;
+
+	AdjacencyListHead * head = list -> head;
+	while (head) {
+
+		AdjacencyNode * node = head -> list;
+		while (node) {
+
+			AdjacencyNode * nTmp = node;
+			node = node -> next;
+			free(nTmp -> name);
+			free(nTmp);
+		}
+		
+		AdjacencyListHead * tmp = head;
+		head = head -> next;
+		free(tmp -> name);
+		free(tmp);
+	}
+
+	free(list);
+}
+
 AdjacencyNode * createAdjacencyNode(char * name, int weight) {
 	AdjacencyNode * node = (AdjacencyNode *) malloc(sizeof(AdjacencyNode) * 1);
-	node -> name = name;
+	node -> name = strdup(name);
 	node -> weight = weight;
 	node -> next = NULL;
 	return node;
@@ -49,7 +76,7 @@ AdjacencyNode * createAdjacencyNode(char * name, int weight) {
 AdjacencyListHead * createAdjacencyListHead(char * headName) {
 	AdjacencyListHead * head = (AdjacencyListHead *) malloc(sizeof(AdjacencyListHead) * 1);
 	head -> list = NULL;
-	head -> name = headName;
+	head -> name = strdup(headName);
 	head -> next = NULL;
 	return head;
 }
@@ -62,12 +89,29 @@ AdjacencyList * createAdjacencyList() {
 	return list;
 }
 
+int verticeIndex(AdjacencyList * list, char * name) {
+	int i = 0;
+	AdjacencyListHead * head = list -> head;
+	while (head) {
+		if (strcmp(head -> name, name) == 0) {
+			return i;
+		}
+		head = head -> next;
+		i++;
+	}
+
+	return -1;
+}
+
 int addVertex(AdjacencyList * list, char * name) {
+
+	if (list == NULL)
+		return 0;
+
 	AdjacencyListHead * head = list -> head;
 
-	AdjacencyListHead * new = createAdjacencyListHead(name);
 	if (head == NULL) {
-		list -> head = new;
+		list -> head = createAdjacencyListHead(name);
 		list -> vCount++;
 		return 1;
 	}
@@ -84,13 +128,128 @@ int addVertex(AdjacencyList * list, char * name) {
 		return 0;
 	}
 	
-	head -> next = new;
+	head -> next = createAdjacencyListHead(name);
 	list -> vCount++;
 	return 1;
 	
 }
 
+void freeAdjacencyNode(AdjacencyNode * node) {
+
+	if (node == NULL)
+		return;
+		
+	free(node -> name);
+	free(node);
+}
+
+void deleteEdge(AdjacencyList * list, char * from, char * to) {
+
+	if (list == NULL)
+		return;
+
+	AdjacencyNode * toFree = NULL;
+
+	AdjacencyListHead * head = list -> head;
+	while (head) {
+		if (strcmp(head -> name, from) == 0) {
+			AdjacencyNode * node = head -> list;
+			AdjacencyNode * pred = NULL;
+			while (node) {
+				if (strcmp(node -> name, to) == 0) {
+					if (pred == NULL) {
+						head -> list = node -> next;
+						toFree = node;
+					} else {
+						pred -> next = node -> next;
+						toFree = node;
+					}
+				}
+
+				pred = node;
+				node = node -> next;
+			}
+		}
+
+	    freeAdjacencyNode(toFree);
+		toFree = NULL;
+
+		if (strcmp(head -> name, to) == 0) {
+			AdjacencyNode * node = head -> list;
+			AdjacencyNode * pred = NULL;
+			while (node) {
+				if (strcmp(node -> name, from) == 0) {
+					if (pred == NULL) {
+						head -> list = node -> next;
+						toFree = node;
+					} else {
+						pred -> next = node -> next;
+						toFree = node;
+					}
+				}
+
+				pred = node;
+				node = node -> next;
+			}
+		}
+
+	    freeAdjacencyNode(toFree);
+		toFree = NULL;
+		head = head -> next;
+	}
+}
+
+void freeAdjacencyListHead(AdjacencyListHead * head) {
+
+	if (head == NULL)
+		return;
+
+	AdjacencyNode * node = head -> list;
+	while (node) {
+		AdjacencyNode * tmp = node;
+		node = node -> next;
+		freeAdjacencyNode(tmp);
+	}
+
+	free(head -> name);
+	free(head);
+}
+
+void deleteVertex(AdjacencyList * list, char * name) {
+
+	if (list == NULL)
+		return;
+
+	AdjacencyListHead * head = list -> head;
+	AdjacencyListHead * pred = NULL;
+	AdjacencyListHead * toFree = NULL;
+	while (head) {
+		if (strcmp(head -> name, name) == 0) {
+			if (pred == NULL) {
+				toFree = list -> head;
+				list -> head = head -> next;
+				list -> vCount--;
+			} else {
+				pred -> next = head -> next;
+				toFree = head;
+				list -> vCount--;
+			}
+		} else {
+			deleteEdge(list, head -> name, name);
+		}
+	
+		pred = head;
+		head = head -> next;
+		freeAdjacencyListHead(toFree);
+		toFree = NULL;
+	}
+}
+
 int addEdge(AdjacencyList * list, char * from, char * to, int weight) {
+
+	if (list == NULL || verticeIndex(list, from) == -1 || verticeIndex(list, to) == -1)
+		return 0;
+
 	AdjacencyListHead * head = list -> head;
 
 	while (head) {
@@ -126,6 +285,7 @@ int addEdge(AdjacencyList * list, char * from, char * to, int weight) {
 }
 
 void outputAdjacencyList(AdjacencyList * list) {
+	printf("-------------------------\n");
 	AdjacencyListHead * cur = list -> head;
 	while (cur) {
 		printf("%s: ", cur -> name);
@@ -137,6 +297,7 @@ void outputAdjacencyList(AdjacencyList * list) {
 		printf("end.\n");
 		cur = cur -> next;
 	}
+	printf("-------------------------\n");
 }
 
 void dotPrintGraph(AdjacencyList * list, char * filename) {
@@ -179,25 +340,14 @@ AdjacencyList * importFromFile(char * filename) {
 		addVertex(graph, from);
 		addVertex(graph, to);
 		addEdge(graph, from, to, weight);
+		free(line);
 	}
+
+	free(line);
 
 	fclose(filePtr);
 
 	return graph;
-}
-
-int verticeIndex(AdjacencyList * list, char * name) {
-	int i = 0;
-	AdjacencyListHead * head = list -> head;
-	while (head) {
-		if (strcmp(head -> name, name) == 0) {
-			return i;
-		}
-		head = head -> next;
-		i++;
-	}
-
-	return -1;
 }
 
 AdjacencyListHead * getVerticeByIndex(AdjacencyList * list, int index) {
@@ -214,8 +364,97 @@ AdjacencyListHead * getVerticeByIndex(AdjacencyList * list, int index) {
 	return NULL;
 }
 
+Queue * findShortestPath(AdjacencyList * list, char * f, char * t, int * res) {
+
+	if (list == NULL || verticeIndex(list, f) == -1 || verticeIndex(list, t) == -1) {
+		printf("Graph is not initialized or vertice is not present in graph.\n");
+		return NULL;
+	}
+
+	int * p = (int *) malloc(sizeof(int) * list -> vCount);
+	for (int i = 0; i < list -> vCount; i++) {
+		p[i] = -1;
+	}
+
+	int * d = (int *) malloc(sizeof(int) * list -> vCount);
+	for (int i = 0; i < list -> vCount; i++) {
+		d[i] = INT_MAX;
+	}
+	
+	d[verticeIndex(list, f)] = 0;
+
+	for (int i = 0; i < list -> vCount; i++) {
+		AdjacencyListHead * head = list -> head;
+		while (head) {
+
+			AdjacencyNode * node = head -> list;
+			while (node) {
+
+				int to = verticeIndex(list, node -> name);
+				int from = verticeIndex(list, head -> name);
+
+				if (d[to] > d[from] + node -> weight) {
+					d[to] = d[from] + node -> weight;
+					p[to] = from;
+				}
+				
+				node = node -> next;
+			}
+			
+			head = head -> next;
+		}
+		
+	}
+
+	for (int i = 0; i < list -> vCount; i++) {
+		AdjacencyListHead * head = list -> head;
+		while (head) {
+	
+			AdjacencyNode * node = head -> list;
+			while (node) {
+	
+				int to = verticeIndex(list, node -> name);
+				int from = verticeIndex(list, head -> name);
+	
+				if (d[to] > d[from] + node -> weight) {
+					return NULL;
+				}
+				
+				node = node -> next;
+			}
+			
+			head = head -> next;
+		}
+			
+	}
+
+	int toI = verticeIndex(list, t);
+	* res = d[toI];
+	if (* res == INT_MAX)
+		return NULL;
+
+	Queue * q = createQueue();
+
+
+	int cur = toI;		
+	while (cur != -1) {
+		insertQueue(q, cur);
+		cur = p[cur];	
+	}
+
+	free(d);
+	free(p);
+
+	return q;
+}
 
 void bfs(AdjacencyList * list, char * start) {
+
+	if (list == NULL || verticeIndex(list, start) == -1) {
+		printf("Graph is not initialized or vertice is not present in graph.\n");
+		return;
+	}
+
 	int * color = (int *) malloc(sizeof(int) * list -> vCount);
 	int * d = (int *) malloc(sizeof(int) * list -> vCount);
 	int * pred = (int *) malloc(sizeof(int) * list -> vCount);
@@ -261,6 +500,12 @@ void bfs(AdjacencyList * list, char * start) {
 }
 
 void bfsTask(AdjacencyList * list, char * start) {
+
+	if (list == NULL || verticeIndex(list, start) == -1) {
+		printf("Graph is not initialized or vertice is not present in graph.\n");
+		return;
+	}
+
 	int * color = (int *) malloc(sizeof(int) * list -> vCount);
 	int * d = (int *) malloc(sizeof(int) * list -> vCount);
 	int * pred = (int *) malloc(sizeof(int) * list -> vCount);
@@ -316,11 +561,22 @@ void bfsTask(AdjacencyList * list, char * start) {
 		}
 
 		printf("end.\n");
-	}	
+	}
+
+	eraseQueue(q);
+	free(color);
+	free(pred);
+	free(d);	
 }
 
 
 void bellmanFord(AdjacencyList * list, char * f) {
+
+	if (list == NULL || verticeIndex(list, f) == -1) {
+		printf("Graph is not initialized or vertice is not present in graph.\n");
+		return;
+	}
+
 	int * p = (int *) malloc(sizeof(int) * list -> vCount);
 	for (int i = 0; i < list -> vCount; i++) {
 		p[i] = -1;
@@ -388,16 +644,256 @@ void bellmanFord(AdjacencyList * list, char * f) {
 		}
 		printf("START\n");
 	}
+
+	free(d);
+	free(p);
+	
 }
 
+int * * getMatrixFromAdjacencyList(AdjacencyList * list) {
+	int * * matrix = (int * *) malloc(sizeof(int *) * list -> vCount);
+	for (int i = 0; i < list -> vCount; i++) {
+		matrix[i] = (int *) malloc(sizeof(int) * list -> vCount);
+		for (int j = 0; j < list -> vCount; j++) {
+			matrix[i][j] = INT_MAX;
+		}
+	}
 
+	for (int i = 0; i < list -> vCount; i++) {
+		AdjacencyListHead * head = getVerticeByIndex(list, i);
+		AdjacencyNode * node = head -> list;
+		while (node) {
+			int j = verticeIndex(list, node -> name);
+			matrix[i][j] = node -> weight;
+			node = node -> next;
+		}
+	}
+
+	return matrix;
+}
+
+AdjacencyListHead * floydWarshall(AdjacencyList * graph, char * name, int * res) {
+
+	if (graph == NULL || verticeIndex(graph, name) == -1)
+		return NULL;
+
+	printf("Formed matrix: \n");
+	int * * m = getMatrixFromAdjacencyList(graph);
+	for (int i = 0; i < graph -> vCount; i++) {
+		for (int j = 0; j < graph -> vCount; j++) {
+			printf("%d\t", m[i][j] == INT_MAX ? 0 : m[i][j]);
+		}
+		printf("\n");
+	}
+
+	for (int k = 0; k < graph -> vCount; k++) {
+		for (int i = 0; i < graph -> vCount; i++) {
+			for (int j = 0; j < graph -> vCount; j++) {
+				m[i][j] = m[i][j] > m[i][k] + m[k][j] ? m[i][k] + m[k][j] : m[i][j];
+			}
+		}
+	}
+
+	for (int i = 0; i < graph -> vCount; i++) {
+		if (m[i][i] < 0) {
+			for (int i = 0; i < graph -> vCount; i++) {
+				free(m[i]);
+			}
+	
+			free(m);
+			return NULL;
+		}
+	}
+
+	int max = -INT_MAX;
+	int fromI = verticeIndex(graph, name);
+	AdjacencyListHead * fMax = NULL;
+	for (int i = 0; i < graph -> vCount; i++) {
+		if (m[fromI][i] > max) {
+			fMax = getVerticeByIndex(graph, i);
+			max = m[fromI][i];
+		}
+	}
+
+	*res = max;
+
+	for (int i = 0; i < graph -> vCount; i++) {
+		free(m[i]);
+	}
+	
+	free(m);
+
+	return fMax;
+} 
+
+
+#define ACTION_EXIT 1
+
+#define ACTION_ADD_VRT 2
+
+#define ACTION_ADD_EDG 3
+
+#define ACTION_DEL_V 4
+
+#define ACTION_DEL_E 5
+
+#define ACTION_OUT 6
+
+#define ACTION_DOT 7
+
+#define ACTION_BFS 8
+
+#define ACTION_IND_SHORTEST 9
+
+#define ACTION_VERTEX_FLOYD 10
+
+#define ACTION_IMPORT 11
 
 int main(void) {
-	char * s = readline();
-	AdjacencyList * graph = importFromFile(s);
-	outputAdjacencyList(graph);
-	dotPrintGraph(graph, "graph.dot");
-	bfsTask(graph, "Jessy");
-	bellmanFord(graph, "Mike");
-	return 0;
+
+	AdjacencyList * graph = createAdjacencyList();
+	int action = 0;
+	while (action != ACTION_EXIT) {
+		printf("Enter action.\n");
+		printf("%d - exit, %d - add vertex, %d - add edge, %d - import from file.\n", ACTION_EXIT, ACTION_ADD_VRT, ACTION_ADD_EDG, ACTION_IMPORT);
+		printf("%d - delete vertex, %d - delete edge, %d - output graph, %d - write to dot\n", ACTION_DEL_V, ACTION_DEL_E, ACTION_OUT, ACTION_DOT);
+		printf("%d - Special Breadth-First Search (find chains from person with positive weight).\n", ACTION_BFS);
+		printf("%d - Special Bellman-Ford (find chain between two people with minimal weight).\n", ACTION_IND_SHORTEST);
+		printf("%d - Special Floyd-Warshall (find person with maximum chain weight from another person).\n", ACTION_VERTEX_FLOYD);
+
+		char * pr = "";
+		do {
+			printf("%s", pr);
+			getInt(&action);
+			pr = "No such action. Try again.\n";
+		} while (action < 1 || action > 11);
+
+		switch(action) {
+
+			case ACTION_EXIT:
+				freeGraph(graph);
+				break;
+
+			case ACTION_ADD_VRT:
+				printf("Enter vertex to add:\n");
+				char * vertexToAdd = readline();
+				int res = addVertex(graph, vertexToAdd);
+				free(vertexToAdd);
+				if (res) {
+					printf("Successfully added new vertex.\n");
+				} else {
+					printf("Vertex already exists.\n");
+				}
+				
+				break;
+
+			case ACTION_ADD_EDG:
+				printf("Enter `from` vertex:\n");
+				char * fromV = readline();
+				printf("Enter `to` vertex:\n");
+				char * toV = readline();
+				printf("Enter weight (-10 - 10): ");
+				int w;
+				scanf("%d", &w);
+				int r = addEdge(graph, fromV, toV, w);
+				if (r) {
+					printf("Successfully added edge.\n");
+				} else {
+					printf("Vertecies do not exist.\n");
+				}
+				
+				free(fromV);
+				free(toV);
+				break;
+
+			case ACTION_OUT:
+				outputAdjacencyList(graph);
+				break;
+
+			case ACTION_IMPORT:
+				printf("Enter file name: \n");
+				char * fileName = readline();
+				AdjacencyList * list = importFromFile(fileName);
+				if (list == NULL) {
+					printf("Unable to import.\n");
+					free(fileName);
+					break;
+				}
+
+				freeGraph(graph);
+				graph = list;
+				free(fileName);
+				break;
+
+			case ACTION_DEL_V:
+				printf("Enter vertex to delete: ");
+				char * vertexToDelete = readline();
+				deleteVertex(list, vertexToDelete);
+				free(vertexToDelete);
+				break;
+
+			case ACTION_DEL_E:
+				printf("Enter `from` vertex: ");
+				char * fromD = readline();
+				printf("Enter `to` vertex: ");
+				char * fromT = readline();
+				deleteEdge(list, fromD, fromT);	
+				free(fromD);
+				free(fromT);
+				break;
+				
+			case ACTION_DOT:
+				printf("Enter dot file name: ");
+				char * dotName = readline();
+				dotPrintGraph(list, dotName);
+				printf("Wrote to file.\n");
+				free(dotName);
+				break;
+
+			case ACTION_BFS:
+				printf("Enter person to search from: ");
+				char * pName = readline();
+				bfsTask(graph, pName);
+				free(pName);
+				break;
+
+			case ACTION_VERTEX_FLOYD:
+				printf("Enter name: \n");
+				char * flName = readline();
+				int fRes = 0;
+				AdjacencyListHead * head = floydWarshall(graph, flName, &fRes);
+				if (head == NULL) {
+					printf("Negative cycles or graph is empty or no edges.\n");
+				} else {
+					printf("Found vertex with name: %s and chain sum: %d.\n", head -> name, fRes);
+				}
+				free(flName);
+				break;
+
+			case ACTION_IND_SHORTEST:
+				printf("Enter names of people to find shortest path: \n");
+				char * first = readline();
+				char * second = readline();
+				int sum = 0;
+				bellmanFord(graph, first);
+				Queue * q = findShortestPath(graph, first, second, &sum);
+				if (q == NULL) {
+					printf("Cannot build path - negative cycles or no way.\n");
+				} else {
+					printf("Found path with sum: %d\n", sum);
+					printf("end <- ");
+					while (queueSize(q) != 0) {
+						int i = popQueue(q);
+						AdjacencyListHead * head = getVerticeByIndex(graph, i);
+						printf("%s <- ", head -> name);
+					}
+					printf("start.\n");
+					eraseQueue(q);
+				}
+				
+				free(first);
+				free(second);
+				break;
+		}
+	}
 }
